@@ -1,0 +1,125 @@
+diff -aru vim73/src/fileio.c vim73modified/src/fileio.c
+--- vim73/src/fileio.c	2010-08-14 21:20:54.000000000 +0900
++++ vim73modified/src/fileio.c	2010-08-18 12:14:21.000000000 +0900
+@@ -1036,7 +1036,7 @@
+     if (iconv_fd != (iconv_t)-1)
+     {
+ 	/* aborted conversion with iconv(), close the descriptor */
+-	iconv_close(iconv_fd);
++	libiconv_close(iconv_fd);
+ 	iconv_fd = (iconv_t)-1;
+     }
+ # endif
+@@ -1430,7 +1430,7 @@
+ # ifdef USE_ICONV
+ 			    if (iconv_fd != (iconv_t)-1)
+ 			    {
+-				iconv_close(iconv_fd);
++				libiconv_close(iconv_fd);
+ 				iconv_fd = (iconv_t)-1;
+ 			    }
+ # endif
+@@ -1555,7 +1555,7 @@
+ 		 * another conversion.  Except for when there is no
+ 		 * alternative (help files).
+ 		 */
+-		while ((iconv(iconv_fd, (void *)&fromp, &from_size,
++		while ((libiconv(iconv_fd, (void *)&fromp, &from_size,
+ 							       &top, &to_size)
+ 			    == (size_t)-1 && ICONV_ERRNO != ICONV_EINVAL)
+ 						  || from_size > CONV_RESTLEN)
+@@ -2318,7 +2318,7 @@
+ # ifdef USE_ICONV
+     if (iconv_fd != (iconv_t)-1)
+     {
+-	iconv_close(iconv_fd);
++	libiconv_close(iconv_fd);
+ 	iconv_fd = (iconv_t)-1;
+     }
+ # endif
+@@ -5017,7 +5017,7 @@
+ # ifdef USE_ICONV
+     if (write_info.bw_iconv_fd != (iconv_t)-1)
+     {
+-	iconv_close(write_info.bw_iconv_fd);
++	libiconv_close(write_info.bw_iconv_fd);
+ 	write_info.bw_iconv_fd = (iconv_t)-1;
+     }
+ # endif
+@@ -5661,7 +5661,7 @@
+ 		size_t	save_len = tolen;
+ 
+ 		/* output the initial shift state sequence */
+-		(void)iconv(ip->bw_iconv_fd, NULL, NULL, &to, &tolen);
++		(void)libiconv(ip->bw_iconv_fd, NULL, NULL, &to, &tolen);
+ 
+ 		/* There is a bug in iconv() on Linux (which appears to be
+ 		 * wide-spread) which sets "to" to NULL and messes up "tolen".
+@@ -5677,7 +5677,7 @@
+ 	    /*
+ 	     * If iconv() has an error or there is not enough room, fail.
+ 	     */
+-	    if ((iconv(ip->bw_iconv_fd, (void *)&from, &fromlen, &to, &tolen)
++	    if ((libiconv(ip->bw_iconv_fd, (void *)&from, &fromlen, &to, &tolen)
+ 			== (size_t)-1 && ICONV_ERRNO != ICONV_EINVAL)
+ 						    || fromlen > CONV_RESTLEN)
+ 	    {
+diff -aru vim73/src/mbyte.c vim73modified/src/mbyte.c
+--- vim73/src/mbyte.c	2010-07-18 22:05:44.000000000 +0900
++++ vim73modified/src/mbyte.c	2010-08-18 12:07:00.000000000 +0900
+@@ -3999,7 +3999,7 @@
+ 	return (void *)-1;
+ #endif
+ 
+-    fd = iconv_open((char *)enc_skip(to), (char *)enc_skip(from));
++    fd = libiconv_open((char *)enc_skip(to), (char *)enc_skip(from));
+ 
+     if (fd != (iconv_t)-1 && iconv_ok == -1)
+     {
+@@ -4012,11 +4012,11 @@
+ 	 */
+ 	p = (char *)tobuf;
+ 	tolen = ICONV_TESTLEN;
+-	(void)iconv(fd, NULL, NULL, &p, &tolen);
++	(void)libiconv(fd, NULL, NULL, &p, &tolen);
+ 	if (p == NULL)
+ 	{
+ 	    iconv_ok = FALSE;
+-	    iconv_close(fd);
++	    libiconv_close(fd);
+ 	    fd = (iconv_t)-1;
+ 	}
+ 	else
+@@ -4073,7 +4073,7 @@
+ 	tolen = len - done - 2;
+ 	/* Avoid a warning for systems with a wrong iconv() prototype by
+ 	 * casting the second argument to void *. */
+-	if (iconv(vcp->vc_fd, (void *)&from, &fromlen, &to, &tolen)
++	if (libiconv(vcp->vc_fd, (void *)&from, &fromlen, &to, &tolen)
+ 								!= (size_t)-1)
+ 	{
+ 	    /* Finished, append a NUL. */
+@@ -4180,11 +4180,11 @@
+     }
+ 
+     iconv	= (void *)GetProcAddress(hIconvDLL, "libiconv");
+-    iconv_open	= (void *)GetProcAddress(hIconvDLL, "libiconv_open");
+-    iconv_close	= (void *)GetProcAddress(hIconvDLL, "libiconv_close");
++    libiconv_open	= (void *)GetProcAddress(hIconvDLL, "libiconv_open");
++    libiconv_close	= (void *)GetProcAddress(hIconvDLL, "libiconv_close");
+     iconvctl	= (void *)GetProcAddress(hIconvDLL, "libiconvctl");
+     iconv_errno	= (void *)GetProcAddress(hMsvcrtDLL, "_errno");
+-    if (iconv == NULL || iconv_open == NULL || iconv_close == NULL
++    if (iconv == NULL || libiconv_open == NULL || libiconv_close == NULL
+ 	    || iconvctl == NULL || iconv_errno == NULL)
+     {
+ 	iconv_end();
+@@ -5699,7 +5699,7 @@
+     /* Reset to no conversion. */
+ # ifdef USE_ICONV
+     if (vcp->vc_type == CONV_ICONV && vcp->vc_fd != (iconv_t)-1)
+-	iconv_close(vcp->vc_fd);
++	libiconv_close(vcp->vc_fd);
+ # endif
+     vcp->vc_type = CONV_NONE;
+     vcp->vc_factor = 1;
